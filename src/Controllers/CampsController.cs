@@ -1,12 +1,11 @@
-﻿using AutoMapper;
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
+using AutoMapper;
 using CoreCodeCamp.Data;
 using CoreCodeCamp.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Routing;
 
 namespace CoreCodeCamp.Controllers
@@ -19,26 +18,24 @@ namespace CoreCodeCamp.Controllers
         private readonly IMapper _mapper;
         private readonly LinkGenerator _linkGenerator;
 
-        public CampsController(ICampRepository campRepository,
-                               IMapper mapper,
-                               LinkGenerator linkGenerator)
+        public CampsController(ICampRepository campRepository, IMapper mapper, LinkGenerator linkGenerator)
         {
             _campRepository = campRepository;
             _mapper = mapper;
             _linkGenerator = linkGenerator;
         }
+
         [HttpGet]
         public async Task<ActionResult<CampModel[]>> GetCamps(bool includeTalks = false)
         {
             try
             {
                 var results = await _campRepository.GetAllCampsAsync(includeTalks);
-
                 return _mapper.Map<CampModel[]>(results);
             }
             catch (Exception e)
             {
-                return this.StatusCode(StatusCodes.Status500InternalServerError, "Database Failure");
+                return StatusCode(StatusCodes.Status500InternalServerError, "Database Failure");
             }
         }
 
@@ -53,7 +50,7 @@ namespace CoreCodeCamp.Controllers
             }
             catch (Exception)
             {
-                return this.StatusCode(StatusCodes.Status500InternalServerError, "Database Failure");
+                return StatusCode(StatusCodes.Status500InternalServerError, "Database Failure");
             }
         }
 
@@ -63,16 +60,15 @@ namespace CoreCodeCamp.Controllers
             try
             {
                 var result = await _campRepository.GetAllCampsByEventDate(date, includeTalks);
-
                 if (!result.Any()) return NotFound();
-
                 return _mapper.Map<CampModel[]>(result);
             }
             catch (Exception e)
             {
-                return this.StatusCode(StatusCodes.Status500InternalServerError, "Database Failure");
+                return StatusCode(StatusCodes.Status500InternalServerError, "Database Failure");
             }
         }
+
         [HttpPost]
         public async Task<ActionResult<CampModel>> CreateCamp(CampModel model)
         {
@@ -80,23 +76,20 @@ namespace CoreCodeCamp.Controllers
             {
                 var existingCamp = await _campRepository.GetCampAsync(model.Moniker);
                 if (existingCamp != null) return BadRequest("Moniker in use");
-
-                var location = _linkGenerator.GetPathByAction("GetCamp","Camps", new {moniker = model.Moniker});
-                if (string.IsNullOrWhiteSpace(location))
-                    return BadRequest("Could not use current moniker.");
-                
+                var location = _linkGenerator.GetPathByAction("GetCamp", "Camps", new {moniker = model.Moniker});
+                if (string.IsNullOrWhiteSpace(location)) return BadRequest("Could not use current moniker.");
                 var camp = _mapper.Map<Camp>(model);
                 _campRepository.Add(camp);
                 var res = await _campRepository.SaveChangesAsync();
-
                 if (!res) return BadRequest();
                 return Created(location, _mapper.Map<CampModel>(camp));
             }
             catch (Exception)
             {
-                return this.StatusCode(StatusCodes.Status500InternalServerError, "Database Failure");
+                return StatusCode(StatusCodes.Status500InternalServerError, "Database Failure");
             }
         }
+
         [HttpPut("{moniker}")]
         public async Task<ActionResult<CampModel>> UpdateCamp(string moniker, CampModel model)
         {
@@ -107,12 +100,11 @@ namespace CoreCodeCamp.Controllers
                 _mapper.Map(model, existingCamp);
                 var res = await _campRepository.SaveChangesAsync();
                 if (!res) return BadRequest();
-
                 return _mapper.Map<CampModel>(existingCamp);
             }
             catch (Exception)
             {
-                return this.StatusCode(StatusCodes.Status500InternalServerError, "Database Failure");
+                return StatusCode(StatusCodes.Status500InternalServerError, "Database Failure");
             }
         }
 
@@ -123,16 +115,14 @@ namespace CoreCodeCamp.Controllers
             {
                 var existingCamp = await _campRepository.GetCampAsync(moniker);
                 if (existingCamp == null) return NotFound($"No camps exist with {moniker} moniker.");
-
                 _campRepository.Delete(existingCamp);
                 var res = await _campRepository.SaveChangesAsync();
                 if (!res) return BadRequest();
-
                 return Ok();
             }
             catch (Exception)
             {
-                return this.StatusCode(StatusCodes.Status500InternalServerError, "Database Failure");
+                return StatusCode(StatusCodes.Status500InternalServerError, "Database Failure");
             }
         }
     }

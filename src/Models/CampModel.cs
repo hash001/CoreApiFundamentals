@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using CoreCodeCamp.Data;
 
 namespace CoreCodeCamp.Models
 {
@@ -24,6 +25,6 @@ namespace CoreCodeCamp.Models
         public string PostalCode { get; set; }
         public string Country { get; set; }
 
-        public ICollection<TalkModel> Talks { get; set; }
+        public ICollection<Talk> Talks { get; set; }
     }
 }
